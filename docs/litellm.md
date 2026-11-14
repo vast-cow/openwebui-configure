@@ -27,7 +27,7 @@ Expected shape:
 }
 ```
 
-Only the exact public `model_name` is matched to Open WebUI's upstream model ID. Provider/deployment IDs are not aliases. A saved preset uses `base_model_id` first. Unmatched and unknown-chat models remain unchanged.
+Only the exact public `model_name` is matched to Open WebUI's upstream model ID. Provider/deployment IDs are not aliases. A saved preset with a `base_model_id` matches exclusively against that upstream ID; it never falls back to its preset ID. Models without a `base_model_id` match against their own ID. Unmatched and unknown-chat models remain unchanged.
 
 ## Chat capability rules
 

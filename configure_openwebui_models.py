@@ -475,7 +475,7 @@ def build_metadata_controls(entry, model_id, seed_on_budget=2048):
 
 
 def make_plan_metadata(saved, available, metadata, *, unhide_chat=False, seed_on_budget=2048,
-                       preserve_unknown_controls=False):
+                       preserve_unknown_controls=False, upstream_only=False):
     saved_by_id, available_by_id = saved_and_available(saved, available)
     plan = empty_plan(saved_by_id, available_by_id)
     all_ids = set(saved_by_id)
@@ -488,9 +488,11 @@ def make_plan_metadata(saved, available, metadata, *, unhide_chat=False, seed_on
         old = saved_by_id.get(model_id)
         record = make_record(model_id, saved_by_id, available_by_id)
         upstream_id = record.get("base_model_id") or model_id
-        # A preset can override a model by name; metadata belongs primarily to
-        # its upstream vLLM model, not to its Open WebUI preset ID.
-        entry = metadata.get(upstream_id) or metadata.get(model_id)
+        # LiteLLM public names identify upstream models, not preset aliases.
+        # Keep JSON metadata mode's existing preset-ID fallback.
+        entry = metadata.get(upstream_id)
+        if not upstream_only:
+            entry = entry or metadata.get(model_id)
         if entry is None or entry.get("chat_supported") is None:
             plan["skipped_ids"].append(model_id)
             continue
@@ -722,6 +724,7 @@ def main(argv=None):
             unhide_chat=args.unhide_chat_models,
             seed_on_budget=args.seed_on_budget,
             preserve_unknown_controls=args.mode == "litellm",
+            upstream_only=args.mode == "litellm",
         )
 
     plan["warnings"].extend(discovery_warnings)

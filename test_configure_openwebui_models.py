@@ -91,7 +91,7 @@ class CapabilityTests(unittest.TestCase):
         metadata, _ = normalize(*rows)
         return app.make_plan_metadata(saved if saved is not None else [record()],
                                       [{'id': 'public'}], metadata,
-                                      preserve_unknown_controls=True, **kwargs)
+                                      preserve_unknown_controls=True, upstream_only=True, **kwargs)
 
     def test_public_name_preset_and_unmatched(self):
         saved = [record(), record('preset', base_model_id='public'),
@@ -111,6 +111,41 @@ class CapabilityTests(unittest.TestCase):
             self.assertTrue(imported['meta']['hidden'])
             self.assertFalse(imported['is_active'])
         self.assertEqual(saved, original)
+
+    def assert_unmatched_preset_collision(self, info):
+        for hidden in [False, True]:
+            with self.subTest(hidden=hidden):
+                preset = record('alias-a', base_model_id='different-upstream',
+                                meta={'hidden': hidden})
+                original = deepcopy(preset)
+                metadata, _ = normalize(deployment('alias-a', **info))
+                plan = app.make_plan_metadata(
+                    [preset], [{'id': 'different-upstream'}], metadata,
+                    unhide_chat=True, preserve_unknown_controls=True, upstream_only=True)
+                self.assertIn('alias-a', plan['skipped_ids'])
+                self.assertEqual(plan['imports'], [])
+                self.assertEqual(plan['changes_by_id'], {})
+                self.assertEqual(plan['public_ids'], [])
+                self.assertEqual(plan['controlled_ids'], [])
+                self.assertEqual(plan['verify_hidden'], {})
+                self.assertEqual(plan['verify_controls'], {})
+                self.assertEqual(preset, original)
+
+    def test_litellm_preset_id_collision_with_nonchat(self):
+        self.assert_unmatched_preset_collision({'mode': 'embedding'})
+
+    def test_litellm_preset_id_collision_with_chat_efforts(self):
+        self.assert_unmatched_preset_collision(
+            {'mode': 'chat', 'reasoning_effort_levels': ['low', 'high']})
+
+    def test_json_metadata_keeps_preset_id_fallback(self):
+        preset = record('alias-a', base_model_id='different-upstream', meta={})
+        plan = app.make_plan_metadata(
+            [preset], [{'id': 'different-upstream'}],
+            {'alias-a': {'chat_supported': False}})
+        self.assertEqual(plan['imports'][0]['id'], 'alias-a')
+        self.assertTrue(plan['imports'][0]['meta']['hidden'])
+        self.assertNotIn('thinking', plan['imports'][0]['params']['model_controls'])
 
     def test_unknown_preserves_controls_and_updates_access_and_visibility(self):
         old = record()
