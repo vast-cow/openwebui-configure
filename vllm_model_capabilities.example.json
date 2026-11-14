@@ -1,0 +1,546 @@
+{
+  "schema_version": "1.0",
+  "runtime": "vllm",
+  "chat_supported_definition": "suitability_for_text_chat_not_endpoint_compatibility",
+  "models": {
+    "ByteDance-Seed/Seed-OSS-36B-Instruct": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "thinking_budget",
+          "on": 2048,
+          "off": 0
+        },
+        "default": true
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "Qwen/Qwen3-TTS-12Hz-1.7B": {
+      "chat_supported": false,
+      "modality": "text_to_speech",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "Qwen/Qwen3.6-35B-A3B": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "chat_template_kwargs.enable_thinking",
+          "on": true,
+          "off": false
+        },
+        "default": true
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "Qwen/Qwen3.8-27B": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "chat_template_kwargs.enable_thinking",
+          "on": true,
+          "off": false
+        },
+        "default": true
+      },
+      "reasoning_effort": {
+        "parameter": "reasoning_effort",
+        "options": [
+          "low",
+          "medium",
+          "xhigh"
+        ],
+        "default": "xhigh"
+      }
+    },
+    "RiVault/Agentic-Medium": {
+      "chat_supported": true,
+      "modality": "agentic_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Agentic-Small": {
+      "chat_supported": true,
+      "modality": "agentic_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Classifier": {
+      "chat_supported": false,
+      "modality": "classification",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/Embedding-Medium": {
+      "chat_supported": false,
+      "modality": "embedding",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/Embedding-Small": {
+      "chat_supported": false,
+      "modality": "embedding",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/Embedding-Tiny": {
+      "chat_supported": false,
+      "modality": "embedding",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/ImageGenator": {
+      "chat_supported": false,
+      "modality": "image_generation",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/Instruction-Medium": {
+      "chat_supported": true,
+      "modality": "instruction_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Instruction-Small": {
+      "chat_supported": true,
+      "modality": "instruction_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Instruction-Tiny": {
+      "chat_supported": true,
+      "modality": "instruction_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/OCR-Small": {
+      "chat_supported": false,
+      "modality": "ocr",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/OCR-Tiny": {
+      "chat_supported": false,
+      "modality": "ocr",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/Reasoning-Large": {
+      "chat_supported": true,
+      "modality": "reasoning_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Reasoning-Medium": {
+      "chat_supported": true,
+      "modality": "reasoning_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Reasoning-Small": {
+      "chat_supported": true,
+      "modality": "reasoning_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/Reasoning-Tiny": {
+      "chat_supported": true,
+      "modality": "reasoning_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "RiVault/STT-Small": {
+      "chat_supported": false,
+      "modality": "speech_to_text",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "RiVault/TTS-Small": {
+      "chat_supported": false,
+      "modality": "text_to_speech",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "XiaomiMiMo/MiMo-V2.6-Pro-RL": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "bflhc/MoD-Embedding": {
+      "chat_supported": false,
+      "modality": "embedding",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "black-forest-labs/FLUX.2-dev": {
+      "chat_supported": false,
+      "modality": "image_generation",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "black-forest-labs/FLUX.2-klein-9B": {
+      "chat_supported": false,
+      "modality": "image_generation",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "deepseek-ai/DeepSeek-V4-Flash": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "reasoning_effort",
+          "on": "high",
+          "off": "none"
+        },
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": "reasoning_effort",
+        "options": [
+          "low",
+          "high",
+          "max"
+        ],
+        "default": null
+      }
+    },
+    "deepseek-ai/DeepSeek-V4-Flash-reasoning": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "google/diffusiongemma-26B-A4B-it": {
+      "chat_supported": null,
+      "modality": "text_generation",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "google/gemma-4-26B-A4B-it": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "chat_template_kwargs.enable_thinking",
+          "on": true,
+          "off": false
+        },
+        "default": false
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "google/translategemma-27b-it": {
+      "chat_supported": null,
+      "modality": "translation",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "ibm-granite/granite-4.2-3b": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": true,
+        "toggle": {
+          "parameter": "chat_template_kwargs.enable_thinking",
+          "on": true,
+          "off": false
+        },
+        "default": true
+      },
+      "reasoning_effort": {
+        "parameter": "chat_template_kwargs.reasoning_effort",
+        "options": [
+          "low",
+          "high"
+        ],
+        "default": "high"
+      }
+    },
+    "lightonai/LightOnOCR-3-1B": {
+      "chat_supported": false,
+      "modality": "ocr",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    },
+    "lightonai/mLateOn": {
+      "chat_supported": null,
+      "modality": "unknown",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "llm-jp/llm-jp-4.1-32b-a3b-thinking": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": null,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": null,
+        "default": null
+      }
+    },
+    "meta-llama/Llama-3.2-3B-Instruct": {
+      "chat_supported": true,
+      "modality": "text_chat",
+      "thinking": {
+        "supported": false,
+        "toggle": null,
+        "default": null
+      },
+      "reasoning_effort": {
+        "parameter": null,
+        "options": [],
+        "default": null
+      }
+    }
+  }
+}
