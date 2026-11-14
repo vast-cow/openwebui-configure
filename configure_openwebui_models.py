@@ -6,6 +6,7 @@ Default: DRY RUN. --apply writes to Open WebUI.
 Modes:
   legacy    Original eight-step Thinking/reasoning_effort slider on every
             supported model, plus public-read access (original behavior).
+  litellm   Discover capabilities from a separately authenticated /model/info.
   metadata  Load metadata JSON from --metadata-json. Hide non-chat models using
             meta.hidden=true (NOT is_active=false), and build model-specific
             Thinking / Reasoning Effort controls for chat models. Only known
@@ -45,13 +46,14 @@ RECORD_FIELDS = (
 MANAGED_CONTROLS = ("thinking", "reasoning_effort")
 
 
-def request_json(session, base_url, method, path, **kwargs):
+def request_json(session, base_url, method, path, *, include_error_body=True, **kwargs):
     response = session.request(method, f"{base_url}{path}", timeout=120, **kwargs)
     try:
         response.raise_for_status()
     except requests.HTTPError as exc:
         raise RuntimeError(
-            f"{method} {path}: HTTP {response.status_code}: {response.text[:1000]}"
+            f"{method} {path}: HTTP {response.status_code}"
+            + (f": {response.text[:1000]}" if include_error_body else "")
         ) from exc
     return response.json()
 
@@ -236,6 +238,103 @@ def parse_metadata(path):
     return data["models"]
 
 
+def litellm_chat_supported(info):
+    """Classify compatibility with Open WebUI's Chat Completions request path.
+
+    Responses models can use LiteLLM's bridge. Completion mode alone does not
+    establish that a messages-to-prompt adapter exists for this deployment.
+    Endpoint declarations are informational, and conflicts remain unknown.
+    """
+    mode = info.get("mode")
+    nonchat = {"embedding", "rerank", "image_generation", "image_edit",
+               "audio_transcription", "audio_speech", "moderation"}
+    if not isinstance(mode, str) or mode not in nonchat | {"chat", "responses", "completion"}:
+        return None
+    endpoints = info.get("supported_endpoints")
+    if endpoints is None:
+        return False if mode in nonchat else True if mode in {"chat", "responses"} else None
+    if (not isinstance(endpoints, list) or not endpoints
+            or any(not isinstance(x, str) or not x.startswith("/") for x in endpoints)):
+        return None
+    paths = {x.lower().rstrip("/").removeprefix("/v1") for x in endpoints}
+    chat_path = "/chat/completions" in paths
+    bridged_responses = mode == "responses" and "/responses" in paths
+    if mode in nonchat:
+        return None if chat_path or "/responses" in paths else False
+    if chat_path or bridged_responses:
+        return True
+    return None  # Missing compatible endpoints contradict or fail to establish chat.
+
+
+def litellm_effort_options(info):
+    """None means unknown; [] is an explicit empty declaration."""
+    options = info.get("reasoning_effort_levels")
+    if not isinstance(options, list):
+        return None
+    if any(not isinstance(x, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", x)
+           or x in {"constructor", "prototype"} for x in options):
+        return None
+    if len(set(options)) != len(options):
+        return None
+    return list(options)
+
+
+def normalize_litellm(data):
+    """Normalize all deployments by their exact public model_name, never ID."""
+    if not isinstance(data, dict) or not isinstance(data.get("data"), list):
+        raise ValueError("LiteLLM /model/info must return an object with a data list")
+    groups = {}
+    for deployment in data["data"]:
+        if not isinstance(deployment, dict):
+            raise ValueError("LiteLLM /model/info deployment must be an object")
+        name = deployment.get("model_name")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("LiteLLM /model/info deployment has no public model_name")
+        info = deployment.get("model_info")
+        if info is None:
+            info = {}
+        if not isinstance(info, dict):
+            raise ValueError(f"LiteLLM /model/info: {name}: model_info must be an object")
+        groups.setdefault(name, []).append(info)
+
+    metadata, warnings = {}, []
+    for name, deployments in groups.items():
+        chats = [litellm_chat_supported(info) for info in deployments]
+        chat = chats[0] if all(value is chats[0] for value in chats) else None
+        lists = [litellm_effort_options(info) for info in deployments]
+        options = None
+        if all(values is not None for values in lists):
+            options = [value for value in lists[0] if all(value in values for values in lists[1:])]
+        if chat is None:
+            warnings.append(f"{name}: text-chat capability unknown or conflicting; left unchanged")
+        if options is None:
+            warnings.append(f"{name}: reasoning-effort choices unknown or invalid"
+                            + ("; preserving existing reasoning controls" if chat is True else ""))
+        if len(deployments) > 1:
+            warnings.append(f"{name}: combined {len(deployments)} deployments conservatively; effort choices use intersection only when all lists are known")
+        metadata[name] = {
+            "chat_supported": chat,
+            "reasoning_effort": {"parameter": "reasoning_effort", "options": options},
+        }
+    return metadata, warnings
+
+
+def discover_litellm(base_url, token):
+    """Never share Open WebUI's HTTP session or credential with LiteLLM."""
+    try:
+        with requests.Session() as session:
+            session.headers.update({"Authorization": f"Bearer {token}"})
+            data = request_json(session, base_url, "GET", "/model/info",
+                                include_error_body=False)
+        return normalize_litellm(data)
+    except (requests.RequestException, ValueError, RuntimeError) as exc:
+        # Do not include response bodies, which may contain deployment secrets.
+        detail = str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__
+        raise RuntimeError("LiteLLM discovery failed: check LITELLM_URL, credential access to "
+                           "/model/info, connectivity, and response format "
+                           f"({detail})") from exc
+
+
 def parameter_tree(path, value):
     """Turn metadata's dotted name into nested Custom Params for Open WebUI.
 
@@ -375,7 +474,8 @@ def build_metadata_controls(entry, model_id, seed_on_budget=2048):
     }, notes
 
 
-def make_plan_metadata(saved, available, metadata, *, unhide_chat=False, seed_on_budget=2048):
+def make_plan_metadata(saved, available, metadata, *, unhide_chat=False, seed_on_budget=2048,
+                       preserve_unknown_controls=False):
     saved_by_id, available_by_id = saved_and_available(saved, available)
     plan = empty_plan(saved_by_id, available_by_id)
     all_ids = set(saved_by_id)
@@ -426,7 +526,12 @@ def make_plan_metadata(saved, available, metadata, *, unhide_chat=False, seed_on
                 plan["public_ids"].append(model_id)
                 changes.append("public-read")
 
-            if supports_controls(available_by_id.get(upstream_id)):
+            if (preserve_unknown_controls
+                    and entry.get("reasoning_effort", {}).get("options") is None):
+                # LiteLLM has not established either effort choices or a toggle.
+                # Visibility and access above remain independently actionable.
+                pass
+            elif supports_controls(available_by_id.get(upstream_id)):
                 target, notes = build_metadata_controls(
                     entry, model_id, seed_on_budget=seed_on_budget
                 )
@@ -551,8 +656,8 @@ def main(argv=None):
         description="Manage Open WebUI models: original eight-level slider or metadata-aware configuration."
     )
     parser.add_argument(
-        "--mode", choices=("legacy", "metadata"), default="legacy",
-        help="legacy is the original behavior (default); metadata reads --metadata-json.",
+        "--mode", choices=("legacy", "metadata", "litellm"), default="legacy",
+        help="legacy is the original behavior (default); metadata reads --metadata-json; litellm discovers /model/info.",
     )
     parser.add_argument(
         "--metadata-json", "--metadata", dest="metadata_json", metavar="PATH",
@@ -568,7 +673,7 @@ def main(argv=None):
     )
     parser.add_argument(
         "--unhide-chat-models", action="store_true",
-        help="Metadata only: explicitly unhide known chat models (otherwise preserve manual hiding).",
+        help="Metadata/LiteLLM: explicitly unhide known chat models (otherwise preserve manual hiding).",
     )
     parser.add_argument(
         "--seed-on-budget", type=int, default=2048,
@@ -582,7 +687,7 @@ def main(argv=None):
 
     if args.mode == "metadata" and not args.metadata_json:
         parser.error("--mode metadata requires --metadata-json PATH")
-    if args.mode == "legacy" and args.metadata_json:
+    if args.mode != "metadata" and args.metadata_json:
         parser.error("--metadata-json is only valid with --mode metadata")
     if args.seed_on_budget <= 0:
         parser.error("--seed-on-budget must be positive")
@@ -592,6 +697,14 @@ def main(argv=None):
     token = os.environ.get("OPEN_WEBUI_API_KEY", "")
     if not base_url or not token:
         parser.error("Set OPEN_WEBUI_URL and OPEN_WEBUI_API_KEY")
+
+    discovery_warnings = []
+    if args.mode == "litellm":
+        litellm_url = os.environ.get("LITELLM_URL", "").rstrip("/")
+        litellm_token = os.environ.get("LITELLM_API_KEY", "")
+        if not litellm_url or not litellm_token:
+            parser.error("--mode litellm requires LITELLM_URL and LITELLM_API_KEY")
+        metadata, discovery_warnings = discover_litellm(litellm_url, litellm_token)
 
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {token}"})
@@ -608,7 +721,10 @@ def main(argv=None):
             saved, available, metadata,
             unhide_chat=args.unhide_chat_models,
             seed_on_budget=args.seed_on_budget,
+            preserve_unknown_controls=args.mode == "litellm",
         )
+
+    plan["warnings"].extend(discovery_warnings)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f-UTC")
